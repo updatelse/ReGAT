@@ -1,11 +1,3 @@
-"""
-Copyright (c) Microsoft Corporation.
-Licensed under the MIT license.
-
-This code is modified by Linjie Li from Jin-Hwa Kim's repository.
-https://github.com/jnhwkim/ban-vqa
-MIT License
-"""
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -31,15 +23,15 @@ class WordEmbedding(nn.Module):
         self.ntoken = ntoken
         self.emb_dim = emb_dim
 
-    def init_embedding(self, np_file, tfidf=None, tfidf_weights=None):
-        weight_init = torch.from_numpy(np.load(np_file))
-        assert weight_init.shape == (self.ntoken, self.emb_dim)
+    def init_embedding(self, np_file, tfidf=None, tfidf_weights=None):  #初始化嵌入
+        weight_init = torch.from_numpy(np.load(np_file))            #权重初始化
+        assert weight_init.shape == (self.ntoken, self.emb_dim)     #检测变量ntoken、emb_dim嵌入维度是否达到要求
         self.emb.weight.data[:self.ntoken] = weight_init
         if tfidf is not None:
             if 0 < tfidf_weights.size:
                 weight_init = torch.cat([weight_init,
                                          torch.from_numpy(tfidf_weights)], 0)
-            weight_init = tfidf.matmul(weight_init)  # (N x N') x (N', F)
+            weight_init = tfidf.matmul(weight_init)                              # (N x N') x (N', F)
             if 'c' in self.op:
                 self.emb_.weight.requires_grad = True
         if 'c' in self.op:
@@ -56,16 +48,15 @@ class WordEmbedding(nn.Module):
 class QuestionEmbedding(nn.Module):
     def __init__(self, in_dim, num_hid, nlayers, bidirect, dropout,
                  rnn_type='GRU'):
-        """Module for question embedding
-        """
+        """问题嵌入模块"""
         super(QuestionEmbedding, self).__init__()
-        assert rnn_type == 'LSTM' or rnn_type == 'GRU'
+        assert rnn_type == 'LSTM' or rnn_type == 'GRU'             #问题嵌入采用LTSM、GRU
         rnn_cls = nn.LSTM if rnn_type == 'LSTM' else nn.GRU \
             if rnn_type == 'GRU' else None
 
         self.rnn = rnn_cls(
-            in_dim, num_hid, nlayers,
-            bidirectional=bidirect,
+            in_dim, num_hid, nlayers,  #定义维度、隐藏层数量、网络层数
+            bidirectional=bidirect,    #
             dropout=dropout,
             batch_first=True)
 
@@ -75,8 +66,8 @@ class QuestionEmbedding(nn.Module):
         self.rnn_type = rnn_type
         self.ndirections = 1 + int(bidirect)
 
-    def init_hidden(self, batch):
-        # just to get the type of tensor
+    def init_hidden(self, batch):   初始化隐藏层
+        # 为了得到张量的类型
         weight = next(self.parameters()).data
         hid_shape = (self.nlayers * self.ndirections, batch, self.num_hid)
         if self.rnn_type == 'LSTM':
